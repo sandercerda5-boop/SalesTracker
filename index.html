@@ -2,63 +2,69 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Sari-Sari Store Sales Tracker</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <title>Sari-Sari Store Tracker</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 40px; }
     h1 { color: #2c3e50; }
-    input, button { padding: 10px; margin: 5px; }
-    #transactions { margin-top: 20px; }
-    table { border-collapse: collapse; width: 100%; }
+    input, select, button { padding: 10px; margin: 5px; }
+    #summary { display: flex; gap: 40px; margin-bottom: 20px; }
+    #summary div { background: #f4f4f4; padding: 10px; border-radius: 5px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-    th { background-color: #f4f4f4; }
-    canvas { margin-top: 30px; }
+    th { background-color: #eaeaea; }
   </style>
 </head>
 <body>
-  <h1>Sari-Sari Store Sales Tracker</h1>
-  <p>Enter the amount for each transaction:</p>
+  <h1>Sari-Sari Store Tracker</h1>
+
+  <!-- Input section -->
   <input type="number" id="amount" placeholder="Enter amount (₱)" />
-  <button onclick="addTransaction()">Add Sale</button>
-  <button onclick="resetData()">Reset</button>
-  <button onclick="saveLocal()">Save Locally</button>
-  <button onclick="loadLocal()">Load Saved Data</button>
-  <button onclick="exportCSV()">Export to CSV</button>
+  <select id="category">
+    <option value="Sales">Sales</option>
+    <option value="GCash-In">GCash Cash-In</option>
+    <option value="GCash-Out">GCash Cash-Out</option>
+    <option value="Print">Print</option>
+    <option value="BDO">BDO Cash Agad</option>
+  </select>
+  <button onclick="addTransaction()">Add Transaction</button>
 
-  <h2>Total Sales: ₱<span id="total">0</span></h2>
-
-  <div id="transactions">
-    <h3>Transaction History</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Amount (₱)</th>
-          <th>Date</th>
-        </tr>
-      </thead>
-      <tbody id="transactionList"></tbody>
-    </table>
+  <!-- Summary section -->
+  <h2>Totals</h2>
+  <div id="summary">
+    <div><strong>Sales:</strong> ₱<span id="salesTotal">0</span></div>
+    <div><strong>GCash-In:</strong> ₱<span id="gcashInTotal">0</span></div>
+    <div><strong>GCash-Out:</strong> ₱<span id="gcashOutTotal">0</span></div>
+    <div><strong>Print:</strong> ₱<span id="printTotal">0</span></div>
+    <div><strong>BDO:</strong> ₱<span id="bdoTotal">0</span></div>
   </div>
 
-  <h3>Summaries</h3>
-  <p>Daily: ₱<span id="daily">0</span></p>
-  <p>Weekly: ₱<span id="weekly">0</span></p>
-  <p>Monthly: ₱<span id="monthly">0</span></p>
+  <!-- Transaction history -->
+  <h2>Transaction History</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Amount (₱)</th>
+        <th>Category</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody id="transactionList"></tbody>
+  </table>
 
-  <canvas id="salesChart" width="400" height="200"></canvas>
-
+  <!-- JavaScript -->
   <script>
     let transactions = [];
 
     function addTransaction() {
       const amountInput = document.getElementById("amount");
+      const categoryInput = document.getElementById("category");
       const amount = parseFloat(amountInput.value);
+      const category = categoryInput.value;
 
       if (!isNaN(amount) && amount > 0) {
         const date = new Date();
-        transactions.push({ amount: amount, date: date });
-
+        transactions.push({ amount: amount, category: category, date: date });
         updateDisplay();
         amountInput.value = "";
       } else {
@@ -66,99 +72,33 @@
       }
     }
 
-    function resetData() {
-      transactions = [];
-      updateDisplay();
-      alert("Data has been reset.");
-    }
-
-    function saveLocal() {
-      localStorage.setItem("salesData", JSON.stringify(transactions));
-      alert("Data saved locally!");
-    }
-
-    function loadLocal() {
-      const saved = localStorage.getItem("salesData");
-      if (saved) {
-        transactions = JSON.parse(saved);
-        transactions.forEach(t => t.date = new Date(t.date)); // restore dates
-        updateDisplay();
-        alert("Data loaded from local storage!");
-      } else {
-        alert("No saved data found.");
-      }
-    }
-
-    function exportCSV() {
-      let csv = "Transaction #,Amount,Date\n";
-      transactions.forEach((t, i) => {
-        csv += `${i+1},${t.amount},${t.date.toLocaleString()}\n`;
-      });
-      const blob = new Blob([csv], { type: "text/csv" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "sales_data.csv";
-      a.click();
-    }
-
     function updateDisplay() {
-      // Update totals
-      const total = transactions.reduce((sum, t) => sum + t.amount, 0);
-      document.getElementById("total").textContent = total.toFixed(2);
+      // Totals per category
+      const salesTotal = transactions.filter(t => t.category==="Sales")
+        .reduce((sum,t)=>sum+t.amount,0);
+      const gcashInTotal = transactions.filter(t => t.category==="GCash-In")
+        .reduce((sum,t)=>sum+t.amount,0);
+      const gcashOutTotal = transactions.filter(t => t.category==="GCash-Out")
+        .reduce((sum,t)=>sum+t.amount,0);
+      const printTotal = transactions.filter(t => t.category==="Print")
+        .reduce((sum,t)=>sum+t.amount,0);
+      const bdoTotal = transactions.filter(t => t.category==="BDO")
+        .reduce((sum,t)=>sum+t.amount,0);
 
-      // Update table
+      // Update summary section
+      document.getElementById("salesTotal").textContent = salesTotal.toFixed(2);
+      document.getElementById("gcashInTotal").textContent = gcashInTotal.toFixed(2);
+      document.getElementById("gcashOutTotal").textContent = gcashOutTotal.toFixed(2);
+      document.getElementById("printTotal").textContent = printTotal.toFixed(2);
+      document.getElementById("bdoTotal").textContent = bdoTotal.toFixed(2);
+
+      // Update transaction table
       const list = document.getElementById("transactionList");
       list.innerHTML = "";
       transactions.forEach((t, i) => {
         const row = document.createElement("tr");
-        row.innerHTML = `<td>${i+1}</td><td>₱${t.amount.toFixed(2)}</td><td>${t.date.toLocaleString()}</td>`;
+        row.innerHTML = `<td>${i+1}</td><td>₱${t.amount.toFixed(2)}</td><td>${t.category}</td><td>${t.date.toLocaleString()}</td>`;
         list.appendChild(row);
-      });
-
-      // Summaries
-      const now = new Date();
-      const daily = transactions.filter(t => sameDay(t.date, now)).reduce((s,t)=>s+t.amount,0);
-      const weekly = transactions.filter(t => sameWeek(t.date, now)).reduce((s,t)=>s+t.amount,0);
-      const monthly = transactions.filter(t => sameMonth(t.date, now)).reduce((s,t)=>s+t.amount,0);
-
-      document.getElementById("daily").textContent = daily.toFixed(2);
-      document.getElementById("weekly").textContent = weekly.toFixed(2);
-      document.getElementById("monthly").textContent = monthly.toFixed(2);
-
-      // Chart
-      updateChart();
-    }
-
-    function sameDay(d1, d2) {
-      return d1.getDate()===d2.getDate() && d1.getMonth()===d2.getMonth() && d1.getFullYear()===d2.getFullYear();
-    }
-    function sameWeek(d1, d2) {
-      const oneDay = 24*60*60*1000;
-      const diff = Math.floor((d2 - d1)/oneDay);
-      return diff < 7 && d1.getDay() <= d2.getDay();
-    }
-    function sameMonth(d1, d2) {
-      return d1.getMonth()===d2.getMonth() && d1.getFullYear()===d2.getFullYear();
-    }
-
-    let chart;
-    function updateChart() {
-      const ctx = document.getElementById("salesChart").getContext("2d");
-      const labels = transactions.map((t,i)=> "Txn " + (i+1));
-      const data = transactions.map(t=>t.amount);
-
-      if (chart) chart.destroy();
-      chart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Sales Amount (₱)',
-            data: data,
-            backgroundColor: '#3498db'
-          }]
-        }
       });
     }
   </script>
