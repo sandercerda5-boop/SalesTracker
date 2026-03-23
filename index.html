@@ -12,6 +12,8 @@
     table { border-collapse: collapse; width: 100%; margin-top: 20px; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
     th { background-color: #eaeaea; }
+    .actions { margin-top: 20px; }
+    .actions button { margin-right: 10px; }
   </style>
 </head>
 <body>
@@ -51,6 +53,14 @@
     </thead>
     <tbody id="transactionList"></tbody>
   </table>
+
+  <!-- Action buttons -->
+  <div class="actions">
+    <button onclick="resetData()">Reset</button>
+    <button onclick="saveData()">Save Locally</button>
+    <button onclick="loadData()">Load Saved Data</button>
+    <button onclick="exportCSV()">Export to CSV</button>
+  </div>
 
   <!-- JavaScript -->
   <script>
@@ -100,6 +110,48 @@
         row.innerHTML = `<td>${i+1}</td><td>₱${t.amount.toFixed(2)}</td><td>${t.category}</td><td>${t.date.toLocaleString()}</td>`;
         list.appendChild(row);
       });
+    }
+
+    // Reset all data
+    function resetData() {
+      if (confirm("Are you sure you want to reset all data?")) {
+        transactions = [];
+        updateDisplay();
+        localStorage.removeItem("storeData");
+      }
+    }
+
+    // Save data locally
+    function saveData() {
+      localStorage.setItem("storeData", JSON.stringify(transactions));
+      alert("Data saved locally!");
+    }
+
+    // Load saved data
+    function loadData() {
+      const saved = localStorage.getItem("storeData");
+      if (saved) {
+        transactions = JSON.parse(saved);
+        updateDisplay();
+        alert("Data loaded!");
+      } else {
+        alert("No saved data found.");
+      }
+    }
+
+    // Export to CSV
+    function exportCSV() {
+      let csv = "No,Amount,Category,Date\n";
+      transactions.forEach((t, i) => {
+        csv += `${i+1},${t.amount},${t.category},${t.date.toLocaleString()}\n`;
+      });
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "transactions.csv";
+      a.click();
+      URL.revokeObjectURL(url);
     }
   </script>
 </body>
