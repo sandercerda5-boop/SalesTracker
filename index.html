@@ -27,6 +27,7 @@
     <option value="GCash-Out">GCash Cash-Out</option>
     <option value="Print">Print</option>
     <option value="BDO">BDO Cash Agad</option>
+    <option value="E-Load">E-Load</option> <!-- NEW OPTION -->
   </select>
   <button onclick="addTransaction()">Add Transaction</button>
 
@@ -38,6 +39,7 @@
     <div><strong>GCash-Out:</strong> ₱<span id="gcashOutTotal">0</span></div>
     <div><strong>Print:</strong> ₱<span id="printTotal">0</span></div>
     <div><strong>BDO:</strong> ₱<span id="bdoTotal">0</span></div>
+    <div><strong>E-Load:</strong> ₱<span id="eloadTotal">0</span></div> <!-- NEW TOTAL -->
   </div>
 
   <!-- Transaction history -->
@@ -94,6 +96,8 @@
         .reduce((sum,t)=>sum+t.amount,0);
       const bdoTotal = transactions.filter(t => t.category==="BDO")
         .reduce((sum,t)=>sum+t.amount,0);
+      const eloadTotal = transactions.filter(t => t.category==="E-Load")
+        .reduce((sum,t)=>sum+t.amount,0);
 
       // Update summary section
       document.getElementById("salesTotal").textContent = salesTotal.toFixed(2);
@@ -101,13 +105,17 @@
       document.getElementById("gcashOutTotal").textContent = gcashOutTotal.toFixed(2);
       document.getElementById("printTotal").textContent = printTotal.toFixed(2);
       document.getElementById("bdoTotal").textContent = bdoTotal.toFixed(2);
+      document.getElementById("eloadTotal").textContent = eloadTotal.toFixed(2);
 
-      // Update transaction table
+      // Update transaction table (recent first)
       const list = document.getElementById("transactionList");
       list.innerHTML = "";
-      transactions.forEach((t, i) => {
+      transactions.slice().reverse().forEach((t, i) => {
         const row = document.createElement("tr");
-        row.innerHTML = `<td>${i+1}</td><td>₱${t.amount.toFixed(2)}</td><td>${t.category}</td><td>${t.date.toLocaleString()}</td>`;
+        row.innerHTML = `<td>${transactions.length - i}</td>
+                         <td>₱${t.amount.toFixed(2)}</td>
+                         <td>${t.category}</td>
+                         <td>${t.date.toLocaleString()}</td>`;
         list.appendChild(row);
       });
     }
