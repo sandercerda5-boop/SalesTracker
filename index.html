@@ -14,6 +14,7 @@
     th { background-color: #eaeaea; }
     .actions { margin-top: 20px; }
     .actions button { margin-right: 10px; }
+    .btn-small { padding: 5px 8px; margin: 2px; }
   </style>
 </head>
 <body>
@@ -27,7 +28,7 @@
     <option value="GCash-Out">GCash Cash-Out</option>
     <option value="Print">Print</option>
     <option value="BDO">BDO Cash Agad</option>
-    <option value="E-Load">E-Load</option> <!-- NEW OPTION -->
+    <option value="E-Load">E-Load</option>
   </select>
   <button onclick="addTransaction()">Add Transaction</button>
 
@@ -39,7 +40,7 @@
     <div><strong>GCash-Out:</strong> ₱<span id="gcashOutTotal">0</span></div>
     <div><strong>Print:</strong> ₱<span id="printTotal">0</span></div>
     <div><strong>BDO:</strong> ₱<span id="bdoTotal">0</span></div>
-    <div><strong>E-Load:</strong> ₱<span id="eloadTotal">0</span></div> <!-- NEW TOTAL -->
+    <div><strong>E-Load:</strong> ₱<span id="eloadTotal">0</span></div>
   </div>
 
   <!-- Transaction history -->
@@ -51,6 +52,7 @@
         <th>Amount (₱)</th>
         <th>Category</th>
         <th>Date</th>
+        <th>Actions</th>
       </tr>
     </thead>
     <tbody id="transactionList"></tbody>
@@ -67,6 +69,7 @@
   <!-- JavaScript -->
   <script>
     let transactions = [];
+    let editIndex = null; // Track which transaction is being edited
 
     function addTransaction() {
       const amountInput = document.getElementById("amount");
@@ -76,7 +79,18 @@
 
       if (!isNaN(amount) && amount > 0) {
         const date = new Date();
-        transactions.push({ amount: amount, category: category, date: date });
+
+        if (editIndex !== null) {
+          // Update existing transaction
+          transactions[editIndex].amount = amount;
+          transactions[editIndex].category = category;
+          transactions[editIndex].date = date;
+          editIndex = null;
+        } else {
+          // Add new transaction
+          transactions.push({ amount: amount, category: category, date: date });
+        }
+
         updateDisplay();
         amountInput.value = "";
       } else {
@@ -111,13 +125,33 @@
       const list = document.getElementById("transactionList");
       list.innerHTML = "";
       transactions.slice().reverse().forEach((t, i) => {
+        const actualIndex = transactions.length - 1 - i;
         const row = document.createElement("tr");
-        row.innerHTML = `<td>${transactions.length - i}</td>
-                         <td>₱${t.amount.toFixed(2)}</td>
-                         <td>${t.category}</td>
-                         <td>${t.date.toLocaleString()}</td>`;
+        row.innerHTML = `
+          <td>${transactions.length - i}</td>
+          <td>₱${t.amount.toFixed(2)}</td>
+          <td>${t.category}</td>
+          <td>${t.date.toLocaleString()}</td>
+          <td>
+            <button class="btn-small" onclick="editTransaction(${actualIndex})">Edit</button>
+            <button class="btn-small" onclick="deleteTransaction(${actualIndex})">Delete</button>
+          </td>`;
         list.appendChild(row);
       });
+    }
+
+    function editTransaction(index) {
+      const t = transactions[index];
+      document.getElementById("amount").value = t.amount;
+      document.getElementById("category").value = t.category;
+      editIndex = index;
+    }
+
+    function deleteTransaction(index) {
+      if (confirm("Delete this transaction?")) {
+        transactions.splice(index, 1);
+        updateDisplay();
+      }
     }
 
     // Reset all data
@@ -151,7 +185,7 @@
     function exportCSV() {
       let csv = "No,Amount,Category,Date\n";
       transactions.forEach((t, i) => {
-        csv += `${i+1},${t.amount},${t.category},${t.date.toLocaleString()}\n`;
+        csv += `${i+1},${t.amount},${t.category},${t.date}\n`;
       });
       const blob = new Blob([csv], { type: "text/csv" });
       const url = URL.createObjectURL(blob);
